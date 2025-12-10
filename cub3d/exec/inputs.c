@@ -12,7 +12,7 @@
 
 #include "raycasting.h"
 
-static void	init_move_struct(t_moves *move, t_mlx *m)
+void	init_move_struct(t_moves *move, t_mlx *m)
 {
 	move->dx = cos(m->a) * MOVE_SPEED;
 	move->dy = sin(m->a) * MOVE_SPEED;
@@ -60,6 +60,14 @@ static void open_doors(t_mlx *m, t_parsing *parsing, t_moves *move)
 	}
 }
 
+int check_walls(t_mlx *m, int direction)
+{
+	if (direction == 0 && (m->parsing->map[]m->y < 
+		|| m->parsing->map[lround(m->move->ny - 0.4)][lround(m->x)] == 'D'))
+		return (1);
+	return (0);
+}
+
 static void	move_inputs(t_mlx *m, t_moves *move, int keyhook)
 {
 	if (keyhook == XK_a)
@@ -72,7 +80,7 @@ static void	move_inputs(t_mlx *m, t_moves *move, int keyhook)
 		move->nx -= move->dy;
 		move->ny += move->dx;
 	}
-	else if (keyhook == XK_w)
+	else if (keyhook == XK_w && check_walls(m, 0) == 0)
 	{
 		move->nx += move->dx;
 		move->ny += move->dy;
@@ -82,8 +90,6 @@ static void	move_inputs(t_mlx *m, t_moves *move, int keyhook)
 		move->nx -= move->dx;
 		move->ny -= move->dy;
 	}
-	else if (keyhook == 32)
-		open_doors(m, m->parsing, move);
 }
 
 static void manage_angle(t_mlx *m)
@@ -98,35 +104,60 @@ static void manage_angle(t_mlx *m)
 		m->facing = 'W';
 }
 
+/*
+	N --------------
+	n - 0
+	e - 39
+	s - 79
+	w - 118
+
+	S --------------
+	n - 1
+	e - 40
+	s - 79
+	w - 118
+
+	E --------------
+	n - 0
+	e - 39
+	s - 78
+	w - 118
+
+	W --------------
+	n - 0
+	e - 40
+	s - 79
+	w - 118
+*/
+
 int	input(int keyhook, t_mlx *m)
 {
-	t_moves	move;
-
-	init_move_struct(&move, m);
+	init_move_struct(m->move, m);
 	if (keyhook == XK_Escape)
 		close_window(m);
 	else if (keyhook == XK_Left)
 	{
 		m->a -= ROT_SPEED;
 		m->angle--;
-		if (m->angle == -1)
+		if (m->angle <= -1)
 			m->angle = 156;
 	}
 	else if (keyhook == XK_Right)
 	{
 		m->a += ROT_SPEED;
 		m->angle++;
-		if (m->angle == 157)
+		if (m->angle >= 157)
 			m->angle = 0;
 	}
+	else if (keyhook == 32)
+		open_doors(m, m->parsing, m->move);	
 	manage_angle(m);
-	printf("angle: [%d]\nfacing: [%c]", m->angle, m->facing);
-	move_inputs(m, &move, keyhook);
-	if (!wall(m->parsing, move.nx, m->y))
-		m->x = move.nx;
-	if (!wall(m->parsing, m->x, move.ny))
-		m->y = move.ny;
-	cast(m->parsing, m);
+	move_inputs(m, m->move, keyhook);
+	if (!wall(m->parsing, m->move->nx, m->y))
+		m->x = m->move->nx;
+	if (!wall(m->parsing, m->x, m->move->ny))
+		m->y = m->move->ny;
+	cast(m);
 	mlx_put_image_to_window(m->mlx, m->win, m->img, 0, 0);
 	return (0);
 }

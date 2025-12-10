@@ -89,14 +89,16 @@ void set_angle(t_parsing *parsing, t_mlx *m)
 	if (parsing->spawn_dir == 'E')
 		m->angle = 39;
 	if (parsing->spawn_dir == 'W')
-		m->angle = 117;
+		m->angle = 118;
 }
 
-void exec( t_parsing *parsing )
+void exec( t_parsing *parsing)
 {
 	t_mlx	data;
+	t_moves	move;
 
 	data.parsing = parsing;
+	data.move = &move;
 	data.mlx = mlx_init();
 	if (grab_img(parsing, &data) != 0)
 		return ;
@@ -116,7 +118,8 @@ void exec( t_parsing *parsing )
 	data.base_a = data.a;
 	data.img = mlx_new_image(data.mlx, SW, SH);
 	data.px = mlx_get_data_addr(data.img, &(int){0}, &data.line_len, &(int){0});
-	cast(parsing, &data);
+	init_move_struct(&move, &data);
+	cast(&data);
 	mlx_put_image_to_window(data.mlx, data.win, data.img, 0, 0);
 	mlx_hook(data.win, KeyPress, KeyPressMask, input, &data);
 	mlx_hook(data.win, 17, 0, close_window, &data);

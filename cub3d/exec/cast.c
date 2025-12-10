@@ -18,11 +18,6 @@ static void	point(t_mlx *m, int x, int y, int c)
 		*(int *)(m->px + y * m->line_len + x * 4) = c;
 }
 
-// 1 = gris
-// 2 = blanc
-// 3 = vert
-// 4 = orange
-
 static void	strip(t_mlx *m, int col, int h, int side)
 {
 	int	y;
@@ -47,28 +42,54 @@ static void	strip(t_mlx *m, int col, int h, int side)
 		point(m, col, y++, c);
 	while (y < SH)
 		point(m, col, y++, m->parsing->floor);
+	// if (col % 3 != 0 && col % 2 != 0)
+	// {
+	// 	point(m, col, SH / 2, 0xf54242);
+	// 	point(m, col, SH / 2 + 1, 0xf54242);
+	// 	point(m, col, SH / 2 + 2, 0xf54242);
+	// }
 }
 
-static int	detect_side(double x, double y, int side)
+// 1 = gris
+// 2 = blanc
+// 3 = vert	[sud]
+// 4 = orange
+
+static int	detect_side(t_mlx *m, t_ray *r, int side)
 {
+	printf("%f", m->move->ny);
 	if (side == 1)
 	{
-		if (lround(y) == (long)(y))
-			return (1);
-		else
+		if (r->my + 1 > tab_len(m->parsing->map))
 			return (3);
+		if (r->my - 1 < 0)
+			return (1);
+		if (m->move->ny >= r->my)
+			return (1);
+		if (m->move->ny <= r->my)
+			return (3);
+		return (0);
 	}
 	else
 	{
-		if (lround(x) == (long)(x))
+		if (r->mx + 1 > ft_strlen(m->parsing->map[r->my]))
 			return (4);
-		else
+		if (r->mx - 1 < 0)
 			return (2);
+		if (m->move->nx >= r->mx)
+			return (2);
+		if (m->move->nx <= r->mx)
+			return (4);
+		return (0);
+		// if (lround(r->mx + 1) >= ft_strlen(m->parsing->map[r->my]))
+		// 	return (2);
+		// if (m->parsing->map[r->my][r->mx + 1] && m->parsing->map[r->my][r->mx + 1] == '0')
+		// 	return (4);
+		// return (2);
 	}
-	return (-1);
 }
 
-static double	trace(t_parsing *parsing, t_ray *r)
+static double	trace(t_mlx *move, t_ray *r)
 {
 	int		hit;
 
@@ -87,9 +108,11 @@ static double	trace(t_parsing *parsing, t_ray *r)
 			r->my += r->sty;
 			r->side = 1;
 		}
-		hit = wall(parsing, r->mx, r->my);
+		hit = wall(move->parsing, r->mx, r->my);
 	}
-	r->side = detect_side(r->sdx, r->sdy, r->side);
+	r->side = detect_side(move, r, r->side);
+	if (r->side == 0)
+		exit(0);
 	if (r->side == 2 || r->side == 4)
 		r->sdx -= r->ddx;
 	else if (r->side == 1 || r->side == 3)
@@ -101,7 +124,7 @@ static double	trace(t_parsing *parsing, t_ray *r)
 	return (0);
 }
 
-void	cast(t_parsing *parsing, t_mlx *m)
+void	cast(t_mlx *m)
 {
 	int			col;
 	t_ray		r;
@@ -115,7 +138,7 @@ void	cast(t_parsing *parsing, t_mlx *m)
 	{
 		ra = m->a + FOV * (col / (double)SW - 0.5);
 		setup_dda(m, ra, &r);
-		d = trace(parsing, &r);
+		d = trace(m, &r);
 		h = (int)(SH * 2 / (d * 1.75));
 		if (h < 2)
 			h = 2;

@@ -67,7 +67,8 @@ typedef struct s_mlx
 	void	*s_img;
 	void	*e_img;
 	void	*w_img;
-	t_parsing *parsing;
+	t_parsing	*parsing;
+	t_moves		*move;
 	double	base_a;
 	int		angle;
 	char	facing;
@@ -77,7 +78,8 @@ int		close_window(t_mlx *data);
 int		input(int keyhook, t_mlx *m);
 void	exec( t_parsing *parsing );
 int		wall(t_parsing *parsing, int x, int y);
-void	cast(t_parsing *parsing, t_mlx *m);
+void	cast(t_mlx *m);
 void	setup_dda(t_mlx *m, double ra, t_ray *r);
+void	init_move_struct(t_moves *move, t_mlx *m);
 
 #endif
