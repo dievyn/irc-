@@ -6,13 +6,10 @@ CXXFLAGS = -Wall -Wextra -Werror -MMD -std=c++98 -g
 OBJET = $(SRC:.cpp=.o)
 DEPS = $(OBJET:.o=.d)
 
-SRC = ft_irc.cpp		\
-	Client.cpp			\
-	Server.cpp			\
-	CommandHandling.cpp \
-	Join.cpp			\
-	PrivateMsg.cpp		\
-
+SRC = osef.cpp		\
+	Server.cpp		\
+	Client.cpp		\
+	tools.cpp		\
 
 all: $(NAME)
 
