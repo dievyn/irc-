@@ -27,5 +27,7 @@ int Server::PrivateMsg(Client *client_obj, std::string command)
 			return send(this->clients[i].GetFd(), message.c_str(), message.size(), 0), 1;
 	message = homie + " isn't currently online or doesn't exist.\n";
 	send(client_obj->GetFd(), message.c_str(), message.size(), 0);
+	std::cout << "Client " << client_obj->GetName() << " sent a private message to "
+		<< homie << ": \"" << message << "\"\n";
 	return 0;
 }

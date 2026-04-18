@@ -3,9 +3,9 @@
 Server::Server( int port )
 {
 	serverSocket = -1;
-	this->channels[0] = "channel_1";
-	this->channels[1] = "purgatory";
-	this->channels[2] = "minecraft";
+	this->channels.push_back("channel_1");
+	this->channels.push_back("purgatory");
+	this->channels.push_back("minecraft");
 	this->password = "abricot";
 	addrlen = sizeof(sockaddr);
 	memset(&this->serverAddress, 0, sizeof this->serverAddress);
@@ -23,9 +23,9 @@ void Server::SerSocket()
 {
 	int yes = 1;
 	this->serverSocket = socket(PF_INET, SOCK_STREAM, 0);
-	setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
-	std::cout << bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) << "\n";
-	std::cout << listen(serverSocket, 10) << "\n";
+	setsockopt(this->serverSocket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
+	std::cout << bind(this->serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) << "\n";
+	std::cout << listen(this->serverSocket, 10) << "\n";
 
 
     this->epollfd = epoll_create1(0);
@@ -66,7 +66,7 @@ void Server::RunServer( void )
 	{
 //		we wait for events to occur (messages being sent to our socket)
         nfds = epoll_wait(epollfd, events, MAX_EVENTS, 2500);
-		std::cout << "NFDS: " << nfds << "\n";
+		// std::cout << "NFDS: " << nfds << "\n";
         if (nfds == -1)
 		{
             perror("epoll_wait");
@@ -79,7 +79,9 @@ void Server::RunServer( void )
             if (events[n].data.fd == serverSocket)
 				AcceptNewClient(events[n].data.fd);
 		    else
-				this->clients[find_client(events[n].data.fd, this->clients)] = ReceiveNewData(&this->clients[find_client(events[n].data.fd, this->clients)]);
+				ReceiveNewData(&this->clients[find_client(events[n].data.fd, this->clients)]);
+				// this->clients[find_client(events[n].data.fd, this->clients)]
+					// = ReceiveNewData(&this->clients[find_client(events[n].data.fd, this->clients)]);
     	}
 	}
 }
@@ -110,17 +112,8 @@ void Server::AcceptNewClient( int fd )
 	send(new_client.GetFd(), "Enter username followed by password to authenticate.\n", 55, 0);
 }
 
-void ChangeName(Client *client_obj, char *name)
-{
-	std::string new_name;
 
-	client_obj->GetName().clear();
-	for (int i = 0; name[i] && name[i] != ' ' && name[i] != '\n' && name[i] != '\r'; i++)
-		new_name.push_back(name[i]);
-	client_obj->SetName(new_name);
-}
-
-void authenticate(Client *client_obj, char *buffer, std::string password)
+void Server::authenticate(Client *client_obj, std::string buffer, std::string password)
 {
 	std::string pass;
 
@@ -131,6 +124,8 @@ void authenticate(Client *client_obj, char *buffer, std::string password)
 		pass.push_back(buffer[i]);
 	if (pass == password)
 	{
+		std::cout << "Authentication successful ! Client_fd " << client_obj->GetFd()
+			<< " is now connected to server as " << client_obj->GetName() << ".\n";
 		send(client_obj->GetFd(), "Authentication successful ! Welcome in channel_1.\n", 52, 0);
 		client_obj->SetStatus(true);
 	}
@@ -144,33 +139,52 @@ void authenticate(Client *client_obj, char *buffer, std::string password)
 Client Server::ReceiveNewData( Client *client_obj )
 {
 	std::string message;
-	char buffer[1024] = {0};
-	int siz = recv(client_obj->GetFd(), buffer, sizeof(buffer) - 1, 0);
-	if (siz == 0)
+	char tmp_buff[1024] = {0};
+	int siz;
+
+
+	siz = recv(client_obj->GetFd(), tmp_buff, sizeof(tmp_buff), 0);
+	if (siz > 0)
+		client_obj->SetBuffer( client_obj->GetBuffer() + tmp_buff );
+
+
+	if (siz == 0 && client_obj->GetBuffer()[client_obj->GetBuffer().size() - 1] == '\n')
 	{
 		message = "<" + client_obj->GetChannel() + "> " + client_obj->GetName() + " disconected...\n"; 
 		for (unsigned int i = 0; i < this->clients.size(); i++)
 			if (this->clients[i].GetChannel() == client_obj->GetChannel())
 				send(this->clients[i].GetFd(), message.c_str(), message.size(), 0);
 		send(1, message.c_str(), message.size(), 0);
+		std::cout << "Client " << client_obj->GetName() << " disconected...\n";
 
-		close (client_obj->GetFd());
-		client_obj->GetName().erase();
-		client_obj->GetChannel().erase();
-	}
-	else if (client_obj->GetStatus() == 0)
-		authenticate(client_obj, buffer, this->password);
-	else
-	{
-		buffer[siz] = '\0';
-		if (check_commands(client_obj, buffer) == 0)
+
+		if (epoll_ctl(this->epollfd, EPOLL_CTL_DEL, client_obj->GetFd(), &ev) == -1)
 		{
-			message = "<" + client_obj->GetChannel() + "> by client " + client_obj->GetName() + ": " + buffer; 
+			perror("epoll_ctl: client_fd");
+			exit(EXIT_FAILURE);
+	    }
+		close (client_obj->GetFd());
+		client_obj->SetName("");
+		client_obj->SetChannel("");
+		client_obj->SetFd(-1);
+	}
+	// else if (client_obj->GetStatus() == 0  && client_obj->GetBuffer()[client_obj->GetBuffer().size() - 1] == '\n')
+	// 	authenticate(client_obj, client_obj->GetBuffer(), this->password);
+	else if (client_obj->GetBuffer()[client_obj->GetBuffer().size() - 1] == '\n')
+	{
+		tmp_buff[siz] = '\0';
+		if (check_commands(client_obj, client_obj->GetBuffer()) == 0)
+		{
+			message = "<" + client_obj->GetChannel() + "> by client " + client_obj->GetName() + ": " + client_obj->GetBuffer(); 
 			for (unsigned int i = 0; i < this->clients.size(); i++)
 				if (this->clients[i].GetChannel() == client_obj->GetChannel())
 					send(this->clients[i].GetFd(), message.c_str(), message.size(), 0);
 			send(1, message.c_str(), message.size(), 0);
 		}
 	}
+
+
+	if (client_obj->GetBuffer()[client_obj->GetBuffer().size() - 1] == '\n')
+		client_obj->SetBuffer("");
 	return *client_obj;
 }

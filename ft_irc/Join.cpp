@@ -12,20 +12,30 @@ std::string grab_new_channel(std::string command)
 }
 
 
-int Server::switch_channels(Client *client_obj, std::string command)
+int Server::Join(Client *client_obj, std::string command)
 {
 	std::string message;
 	std::string new_chan = grab_new_channel(command);
-	if (new_chan == this->channels[0]
-		|| new_chan == this->channels[1]
-		|| new_chan == this->channels[2])
+
+	for(unsigned int i = 0; i < this->channels.size(); i++)
 	{
-		client_obj->SetChannel(new_chan);
-		message = client_obj->GetName() + " just joined " + client_obj->GetChannel() + " ! Say hi !\n";
-		for (unsigned int i = 0; i < this->clients.size(); i++)
-			if (this->clients[i].GetChannel() == client_obj->GetChannel())
-				send(this->clients[i].GetFd(), message.c_str(), message.size(), 0);
-		return 1;
+		if (new_chan == this->channels[i])
+		{
+			client_obj->SetChannel(new_chan);
+			message = client_obj->GetName() + " just joined " + client_obj->GetChannel() + " ! Say hi !\n";
+			for (unsigned int i = 0; i < this->clients.size(); i++)
+				if (this->clients[i].GetChannel() == client_obj->GetChannel())
+					send(this->clients[i].GetFd(), message.c_str(), message.size(), 0);
+			std::cout << "Client " << client_obj->GetName() << " just joined channel " << new_chan << ".\n";
+			return 1;
+		}
 	}
-	return send(client_obj->GetFd(), "No such channel. Try again.\n", 30, 0), -1;
+	this->channels.push_back(new_chan);
+	client_obj->SetChannel(new_chan);
+	message = "You just created channel " + new_chan + "!\nInvite your friends with /INVITE !"
+		+ "\nYou can change the topic of the channel using /TOPIC !\n"
+		+ "Someone bothering you ? You can just /KICK them !\n"
+		+ "Have fun discovering all the option of the /MODE command!\n";
+	client_obj->SetCreatedChannels(new_chan);
+	return 1;
 }

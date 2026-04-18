@@ -49,3 +49,8 @@ https://dd.ircdocs.horse/refs/numerics/001
 https://modern.ircdocs.horse/
 
 https://stackoverflow.com/questions/12886573/implementing-irc-rfc-how-to-respond-to-mode
+
+https://dd.ircdocs.horse/refs/commands/join
+
+http://chi.cs.uchicago.edu/chirc/irc_examples.html
+http://chi.cs.uchicago.edu/chirc/index.html

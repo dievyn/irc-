@@ -28,5 +28,8 @@ void Client::SetChannel( std::string new_channel )
 void Client::SetName( std::string name )
 { this->nickname = name; }
 
+void Client::SetBuffer( std::string str )
+{ this->buffer = str; }
+
 void Client::SetStatus( bool status )
 { this->authenticate = status; }

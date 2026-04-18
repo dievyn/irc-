@@ -26,17 +26,26 @@ class Client
 		std::string GetChannel( void );
 		std::string GetName( void );
 		bool GetStatus( void );
+		std::vector<std::string> GetCreatedChannels ( void )
+		{ return this->created_channels; }
+		std::string GetBuffer( void )
+		{ return this->buffer; }
 
 		void SetFd(int fd);
 		void SetChannel( std::string new_channel );
+		void SetCreatedChannels( std::string new_created_channel)
+		{ this->created_channels.push_back(new_created_channel); }
 		void SetName( std::string name );
 		void SetStatus( bool status );
+		void SetBuffer( std::string str );
 
 	private:
 		bool authenticate;
 		std::string nickname;
 		int client_fd;
 		std::string current_channel;
+		std::vector<std::string> created_channels;
+		std::string buffer;
 };
 
 class Server
@@ -47,10 +56,17 @@ class Server
 		void RunServer();
 		void AcceptNewClient( int fd );
 		Client ReceiveNewData( Client *client_obj );
-		int check_commands(Client *client_obj, char *buffer);
-		int switch_channels(Client *client_obj, std::string command);
+		int check_commands(Client *client_obj, std::string buffer);
+		int Join(Client *client_obj, std::string command);
 		int PrivateMsg(Client *client_obj, std::string buffer);
 		std::vector<Client> GetClients( void );
+		void SetPassword( std::string word )
+		{ this->password = word; }
+		void authenticate(Client *client_obj, std::string buffer, std::string password);
+		void ChangeName(Client *client_obj, std::string name);
+		int CheckPerms(Client *client_obj);
+		int KickUser(Client *client_obj, std::string name);
+		int Invite(Client *client_obj, std::string name);
 
 //		osef (for now):
 		static void SignalHandler(int signum); //-> signal handler		
@@ -65,7 +81,7 @@ class Server
 		std::vector<Client> clients; //-> vector of clients
 		// std::vector<struct pollfd> fds; //-> vector of pollfd
 
-		std::string channels[3];
+		std::vector<std::string> channels;
 		sockaddr_in serverAddress;
 		struct sockaddr addr;
 		socklen_t addrlen;
@@ -73,5 +89,9 @@ class Server
 		struct epoll_event ev, events[MAX_EVENTS];
 		int nfds, epollfd;
 };
+
+void print_ascii(std::string str);
+int skipSpace(std::string buffer);
+
 
 #endif
