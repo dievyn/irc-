@@ -26,8 +26,7 @@ void Server::joined_channel(int fd, std::string command)
 	{
 		std::string retweet = ":" + client_name + "!tdenis@localhost JOIN "
 			+ channel + "\r\n";
-		if (this->client_list[i].GetChannel() == channel 
-			&& this->client_list[i].GetFd() != fd)
+		if (this->client_list[i].GetChannel() == channel)
 			send(this->client_list[i].GetFd(), retweet.c_str(), retweet.size(), 0);
 	}
 
@@ -67,12 +66,33 @@ void Server::send_to_channel(int fd, std::string message)
 
 	for (unsigned int i = 0; i < this->client_list.size(); i++)
 	{
-		std::string retweet = ":" + client_name + "!tdenis@localhost PRIVMSG "
-			+ channel + " " + text + "\r\n";
-		std::cout << "--- Message sent by SERVER :" << retweet;
+		std::string retweet = ":" + client_name + "!tdenis@localhost " + message + "\r\n";
+		std::cout << "--- Message sent by SERVER " << retweet;
 		if (this->client_list[i].GetChannel() == channel 
 			&& this->client_list[i].GetFd() != fd)
 			send(this->client_list[i].GetFd(), retweet.c_str(), retweet.size(), 0);
 	}
-//	:alice!a@localhost
 }
+
+void Server::send_to_user(int fd, std::string message)
+{
+	std::string username = grab_word(message, 2);
+	int friend_idx = find_username(username);
+	int friend_fd = this->client_list[friend_idx].GetFd();
+
+	std::string retweet = ":" + this->client_list[find_fd(fd)].GetNickname() + "!tdenis@localhost " + message + "\r\n";
+	std::cout << "--- Message sent by SERVER to "
+		<< this->client_list[find_fd(fd)].GetNickname() << " " << retweet;
+	send(friend_fd, retweet.c_str(), retweet.size(), 0);
+}
+
+void Server::send_message(int fd, std::string message)
+{
+	std::string tmp = grab_word(message, 2);
+	if (tmp[0] == '#')
+		send_to_channel(fd, message);
+	else
+		send_to_user(fd, message);
+}
+	
+//	:nickname!username@localhost

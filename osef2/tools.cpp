@@ -97,3 +97,31 @@ void printAscii(std::string buffer)
 			std::cout << buffer[i];
 	}
 }
+
+void Server::disconnect(int fd)
+{
+	std::vector<Client>::iterator cl_it = this->client_list.begin();
+	int it = find_fd(fd);
+	std::string room = this->client_list.at(it).GetChannel();
+	std::string message = ":" + this->client_list[it].GetNickname()
+		+ "!tdenis@localhost PART " + this->client_list[it].GetChannel() + "\r\n";
+
+	std::cout << "Disconnecting user " << this->client_list[it].GetNickname() << "\n";
+	for(int i = 0; i < it; i++)
+		cl_it++;
+
+	for (unsigned int i = 0; i < this->client_list.size(); i++)
+		if (this->client_list[i].GetChannel() == room 
+			&& this->client_list[i].GetFd() != fd)
+			send(this->client_list[i].GetFd(), message.c_str(), message.size(), 0);
+	close(fd);
+	this->client_list.erase(cl_it);
+}
+
+int Server::find_username(std::string username)
+{
+	for (unsigned int i = 0; i < this->client_list.size(); i++)
+		if (this->client_list[i].GetNickname() == username)
+			return i;
+	return -1;
+}

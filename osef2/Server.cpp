@@ -87,9 +87,11 @@ void Server::interpret(int fd, std::string command)
 		}
 	}
 	else if (grab_word(command, 1) == "PRIVMSG")
-		send_to_channel(fd, command);
+		send_message(fd, command);
 	else if (grab_word(command, 1) == "JOIN")
 		joined_channel(fd, command);
+	else if (grab_word(command, 1) == "QUIT")
+		disconnect(fd);
 }
 
 int is_correct_command(std::string command)
