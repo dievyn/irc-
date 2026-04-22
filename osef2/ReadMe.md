@@ -1,0 +1,1 @@
+OK j'ai un truc qui fonctionne de facon satisfaisante, on peut commencer a voir pour fusionner notre travail, mon code n'est pas franchement clean pour le moment MAIS tout est stable et je commence a me sentir un peu plus a l'aise avec ce que je fais.

@@ -32,8 +32,13 @@ class Client
 		int GetFd( void );
 		std::string GetChannel( void );
 		std::string GetBuffer( void );
+		int GetStatus( void )
+		{ return this->authenticate; }
+		void auth_increase( void )
+		{ this->authenticate = 1; }
 	private:
 		int fd;
+		int authenticate;
 		std::string username;
 		std::string nickname;
 		std::string channel;
@@ -50,13 +55,16 @@ class Server {
 		void send_to_channel(int fd, std::string message);
 		void send_to_user(int fd, std::string message);
 		void joined_channel(int fd, std::string command);
+		void register_nickname(int fd, std::string command);
 		void accept_new_client(int fd);
 		void SetNickname(Client client_obj, std::string name);
 		void parseCommands(int fd, std::string buffer);
 		void interpret(int fd, std::string command);
 		void SerSocket( void );
 		void disconnect(int fd);
+		void check_password(int fd, std::string message);
 		void Run( void );
+		void welcome(int fd);
 
 	private:
 		std::string password;

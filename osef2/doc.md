@@ -54,3 +54,5 @@ https://dd.ircdocs.horse/refs/commands/join
 
 http://chi.cs.uchicago.edu/chirc/irc_examples.html
 http://chi.cs.uchicago.edu/chirc/index.html
+
+https://www.livinginternet.com/r/ra_priv.htm

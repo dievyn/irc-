@@ -60,8 +60,8 @@ std::string grab_word(std::string buffer, int word_idx)
 		for (; buffer[i] > 33 && buffer[i] < 127; i++);
 		words_detected++;
 	}
-	if (!buffer[i])
-		return "NOT THAT MANY WORDS IN STRING.";
+	if (buffer.size() == 0)
+		return "";
 	for(; buffer[i] && buffer[i] > 33 && buffer[i] < 127; i++)
 		new_line.push_back(buffer[i]);
 	return new_line;
@@ -124,4 +124,18 @@ int Server::find_username(std::string username)
 		if (this->client_list[i].GetNickname() == username)
 			return i;
 	return -1;
+}
+
+void Server::check_password(int fd, std::string message)
+{
+		std::cout << "Reading password: ";
+		printAscii(grab_word(message, 2));
+		std::cout << "\n";
+		if (grab_word(message, 2) != this->password)
+		{
+			std::cout << "------- PASSWORD !\n";
+			std::string message = ":myserver 464 " + this->client_list[find_fd(fd)].GetNickname() + " :Password incorrect\r\n";
+			send(fd, message.c_str(), message.size(), 0);
+			close(fd);
+		}
 }

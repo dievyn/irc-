@@ -24,12 +24,6 @@ void Server::SerSocket()
     }
 }
 
-void Server::SetNickname(Client client_obj, std::string str)
-{
-	std::cout << "--Server registered nickname\n";
-	client_obj.SetNickname(grab_word(str, 2));
-}
-
 void Server::interpret(int fd, std::string command)
 {
 	if (command == "CAP LS 302\r\n")
@@ -38,26 +32,16 @@ void Server::interpret(int fd, std::string command)
 		send(fd, "CAP * LS :\r\n", 13, 0);
 	}
 	else if (grab_word(command, 1) == "NICK")
+		register_nickname(fd, command);
+	else if (grab_word(command, 1) == "USER")
 	{
-		this->client_list[find_fd(fd)].SetNickname(grab_word(command, 2));
+		this->client_list[find_fd(fd)].SetUsername(grab_word(command, 2));
+		this->client_list[find_fd(fd)].auth_increase();
 		std::string name = this->client_list[find_fd(fd)].GetNickname();
-		std::cout << "--- Printing NAME: " << name << "\n";
-		std::string message = ":myserver 001 " + name + " :Welcome to the IRC network\r\n";
-		send(fd, message.c_str(), message.size(), 0);
-		message = ":myserver 002 " + name + " :Your host is myserver\r\n";
-		send(fd, message.c_str(), message.size(), 0);
-		message = ":myserver 003 " + name + " :Created today\r\n";
-		send(fd, message.c_str(), message.size(), 0);
-		message = ":myserver 004 " + name + " myserver 0.1 o o\r\n";
-		send(fd, message.c_str(), message.size(), 0);
-		message = ":myserver 376 " + name + " :End of MOTD\r\n";
-		send(fd, message.c_str(), message.size(), 0);
-		//	ca marche ??? jspppp
-	}
-	else if (command == "CAP END\r\n")
-	{
-		std::string name = this->client_list[find_fd(fd)].GetNickname();
-		std::string message = ":myserver 001 " + name + " :Welcome to the IRC network\r\n";
+		std::cout << "--- Printing USERNAME: " << name << "\n";
+		std::string message = ":myserver 001 " + name + " :Welcome to the IRC network "
+			+ this->client_list[find_fd(fd)].GetNickname() + "!"
+			+ this->client_list[find_fd(fd)].GetUsername() + "@localhost\r\n";
 		send(fd, message.c_str(), message.size(), 0);
 		message = ":myserver 002 " + name + " :Your host is myserver\r\n";
 		send(fd, message.c_str(), message.size(), 0);
@@ -69,23 +53,9 @@ void Server::interpret(int fd, std::string command)
 		send(fd, message.c_str(), message.size(), 0);
 	}
 	else if (command == "PING myserver\r\n")
-	{
-		std::cout << "--Server sent PONG\n";
 		send(fd, "PONG :myserver\r\n", 16, 0);
-	}
 	else if (grab_word(command, 1) == "PASS")
-	{
-		std::cout << "Reading password: ";
-		printAscii(grab_word(command, 2));
-		std::cout << "\n";
-		if (grab_word(command, 2) != this->password)
-		{
-			std::cout << "------- PASSWORD !\n";
-			std::string message = ":myserver 464 " + this->client_list[find_fd(fd)].GetNickname() + " :Password incorrect\r\n";
-			send(fd, message.c_str(), message.size(), 0);
-			close(fd);
-		}
-	}
+		check_password(fd, command);
 	else if (grab_word(command, 1) == "PRIVMSG")
 		send_message(fd, command);
 	else if (grab_word(command, 1) == "JOIN")
